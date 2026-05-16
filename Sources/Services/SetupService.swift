@@ -74,6 +74,15 @@ class SetupService: ObservableObject {
         let fm = FileManager.default
         let hermesBase = home + "/.hermes"
 
+        // Resolve a Python >= 3.11 (hermes-agent requires it)
+        updateProgress("Checking Python version...")
+        let pythonPath = resolvePython()
+        if pythonPath == nil {
+            setError("Python 3.11+ required but not found.\n\nInstall it via:\n  brew install python@3.12\n\nThen retry.")
+            return false
+        }
+        updateProgress("Using Python at \(pythonPath!)")
+
         do {
             try fm.createDirectory(atPath: hermesBase, withIntermediateDirectories: true)
         } catch {
@@ -105,7 +114,7 @@ class SetupService: ObservableObject {
                 try? fm.removeItem(atPath: hermesAgentDir + "/venv")
             }
             updateProgress("Creating venv...")
-            let (venvOut, venvCode) = runShell("cd '\(hermesAgentDir)' && python3 -m venv venv 2>&1")
+            let (venvOut, venvCode) = runShell("cd '\(hermesAgentDir)' && '\(pythonPath!)' -m venv venv 2>&1")
             if venvCode != 0 {
                 let tail = String(venvOut.suffix(300))
                 setError("venv creation failed. Is python3 installed?\n\(tail)")
@@ -168,6 +177,47 @@ class SetupService: ObservableObject {
         }
 
         return true
+    }
+
+    // MARK: - Python Resolution
+
+    /// Find a Python >= 3.11. Tries python3.12, python3.11, then python3 with version check.
+    /// Returns the path to a suitable Python, or nil.
+    private func resolvePython() -> String? {
+        let candidates = [
+            "/opt/homebrew/bin/python3.12",
+            "/usr/local/bin/python3.12",
+            "/opt/homebrew/bin/python3.11",
+            "/usr/local/bin/python3.11",
+            "/usr/bin/python3",
+        ]
+
+        // 1. Try named binaries first
+        for path in candidates {
+            if FileManager.default.fileExists(atPath: path) {
+                if checkPythonVersion(path) { return path }
+            }
+        }
+
+        // 2. Try `which python3` from PATH
+        let (whichOut, _) = runShell("which python3 2>/dev/null")
+        let whichPath = whichOut.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !whichPath.isEmpty, FileManager.default.fileExists(atPath: whichPath), checkPythonVersion(whichPath) {
+            return whichPath
+        }
+
+        return nil
+    }
+
+    /// Check if the Python at `path` is >= 3.11.
+    private func checkPythonVersion(_ path: String) -> Bool {
+        let (versionOut, code) = runShell("'\(path)' -c 'import sys; print(sys.version_info.major, sys.version_info.minor)' 2>&1")
+        guard code == 0 else { return false }
+        let parts = versionOut.split(separator: " ")
+        guard parts.count >= 2,
+              let major = Int(parts[0]),
+              let minor = Int(parts[1]) else { return false }
+        return major > 3 || (major == 3 && minor >= 11)
     }
 
     // MARK: - Helpers
