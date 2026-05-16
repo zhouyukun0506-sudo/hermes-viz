@@ -20,6 +20,25 @@ Or package into a standalone `.app` bundle:
 # → HermesViz.app ready to use or share
 ```
 
+## Uninstall
+
+```bash
+# One command removes everything (app, backend, config, build artifacts)
+./uninstall.sh
+```
+
+What it cleans up:
+- `HermesViz.app` (project dir + `/Applications`)
+- `~/.hermes/hermes-agent` backend (~100MB)
+- `~/.hermes/config.yaml`
+- `.build/` artifacts
+
+To also delete the source code after uninstall:
+
+```bash
+cd .. && rm -rf hermes-viz
+```
+
 ## Prerequisites
 
 - macOS 14.0 (Sonoma) or later
@@ -41,5 +60,6 @@ hermes-viz/
 ├── Package.swift     # Swift Package Manager manifest
 ├── run.sh            # Build & launch in one command
 ├── build-app.sh      # Package into .app bundle
+├── uninstall.sh      # One-click cleanup
 └── requirements.txt  # Python bridge dependencies
 ```
