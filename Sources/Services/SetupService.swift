@@ -184,8 +184,8 @@ class SetupService: ObservableObject {
 
     /// Run pip with proxy bypass + mirror fallbacks for restricted networks.
     private func pipWithMirrors(_ args: String) -> Bool {
-        // Prepend proxy bypass (unset HTTP_PROXY/HTTPS_PROXY for this command)
-        let noProxy = "unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy 2>/dev/null; "
+        // Override macOS system proxy + any env vars (Python reads SystemConfiguration on macOS)
+        let noProxy = "export HTTP_PROXY='' HTTPS_PROXY='' http_proxy='' https_proxy='' ALL_PROXY='' all_proxy='' no_proxy='*' 2>/dev/null; "
 
         let mirrors = [
             ("Tsinghua", "https://pypi.tuna.tsinghua.edu.cn/simple"),
