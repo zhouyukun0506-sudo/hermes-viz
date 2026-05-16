@@ -113,13 +113,28 @@ class SetupService: ObservableObject {
             }
         }
 
+        // Upgrade pip first (old pip can't handle pyproject.toml editable installs)
+        updateProgress("Upgrading pip...")
+        let (upgradeOut, upgradeCode) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install --upgrade pip setuptools wheel 2>&1")
+        if upgradeCode != 0 {
+            updateProgress("pip upgrade had warnings (non-fatal).")
+        } else {
+            updateProgress("pip upgraded.")
+        }
+
         // Pip install — always run to ensure latest
-        updateProgress("Installing dependencies (this may take a minute)...")
+        updateProgress("Installing hermes-agent (this may take a minute)...")
         let (pipOut, pipCode) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install -e . 2>&1")
         if pipCode != 0 {
-            let tail = String(pipOut.suffix(500))
-            setError("pip install failed:\n\(tail)")
-            return false
+            // Fallback: try non-editable install (some build backends don't support -e)
+            updateProgress("Editable install failed. Trying regular install...")
+            let (pipOut2, pipCode2) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install . 2>&1")
+            if pipCode2 != 0 {
+                let tail = String(pipOut2.suffix(500))
+                setError("pip install failed:\n\(tail)")
+                return false
+            }
+            updateProgress("Package installed (non-editable).")
         }
 
         // Verify hermes CLI was created
