@@ -79,12 +79,17 @@ class SetupService: ObservableObject {
             if code != 0 { setError("venv failed:\n\(String(out.suffix(300)))"); return false }
         }
 
-        _ = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install --upgrade pip setuptools wheel 2>&1")
+        updateProgress("Upgrading pip with mirror...")
+        if !pipWithMirrors("install --upgrade pip setuptools wheel") {
+            updateProgress("pip upgrade had warnings (non-fatal).")
+        }
         updateProgress("Installing hermes-agent...")
-        let (_, code1) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install -e . 2>&1")
-        if code1 != 0 {
-            let (out2, code2) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install . 2>&1")
-            if code2 != 0 { setError("pip install failed:\n\(String(out2.suffix(500)))"); return false }
+        if !pipWithMirrors("install -e .") {
+            updateProgress("Editable install failed. Trying regular install...")
+            if !pipWithMirrors("install .") {
+                setError("pip install failed — all mirrors exhausted. Check network/proxy.")
+                return false
+            }
         }
 
         if !fm.fileExists(atPath: hermesCLI) {
@@ -175,6 +180,36 @@ class SetupService: ObservableObject {
         }
 
         return nil
+    }
+
+    /// Run pip with multiple mirror fallbacks for Chinese network environments.
+    /// Tries: Tsinghua → Aliyun → USTC → default PyPI.
+    private func pipWithMirrors(_ args: String) -> Bool {
+        let mirrors = [
+            ("Tsinghua", "https://pypi.tuna.tsinghua.edu.cn/simple"),
+            ("Aliyun",  "https://mirrors.aliyun.com/pypi/simple"),
+            ("USTC",    "https://pypi.mirrors.ustc.edu.cn/simple"),
+            ("default", ""),
+        ]
+        for (name, url) in mirrors {
+            let mirrorArg = url.isEmpty ? "" : "-i \(url) --trusted-host \(URL(string: url)?.host ?? url)"
+            let cmd = "cd '\(hermesAgentDir)' && ./venv/bin/pip \(mirrorArg) \(args) 2>&1"
+            let (out, code) = runShell(cmd)
+            if code == 0 { return true }
+            // Only retry if it looks like a network error
+            let lower = out.lowercased()
+            if lower.contains("tunnel connection failed")
+                || lower.contains("service unavailable")
+                || lower.contains("connection refused")
+                || lower.contains("network is unreachable")
+                || lower.contains("name or service not known")
+                || lower.contains("timed out") {
+                updateProgress("Mirror \(name) unreachable, trying next...")
+                continue
+            }
+            return false // Non-network error, don't retry
+        }
+        return false
     }
 
     private func isPy311(_ path: String) -> Bool {
