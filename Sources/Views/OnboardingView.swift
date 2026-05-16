@@ -3,7 +3,7 @@ import SwiftUI
 struct OnboardingView: View {
     @ObservedObject var setup: SetupService
     @State private var showingConfig = false
-    
+
     var body: some View {
         VStack(spacing: 30) {
             // Logo / Icon
@@ -16,7 +16,7 @@ struct OnboardingView: View {
                         .foregroundStyle(.white)
                 }
                 .shadow(color: Color.wxAccent.opacity(0.3), radius: 20)
-            
+
             VStack(spacing: 8) {
                 Text("Welcome to Hermes")
                     .font(.system(size: 24, weight: .bold))
@@ -24,7 +24,7 @@ struct OnboardingView: View {
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
             }
-            
+
             if setup.isInstalling {
                 VStack(spacing: 16) {
                     ProgressView()
@@ -32,6 +32,7 @@ struct OnboardingView: View {
                     Text(setup.installProgress)
                         .font(.system(size: 13, design: .monospaced))
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
                 .transition(.opacity)
             } else if let error = setup.installError {
@@ -45,7 +46,7 @@ struct OnboardingView: View {
                         .font(.caption)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
-                    
+
                     Button("Retry Installation") {
                         setup.install { _ in }
                     }
@@ -58,14 +59,15 @@ struct OnboardingView: View {
                     FeatureRow(icon: "sparkles", title: "Autonomous Agent", description: "Powered by Hermes-Agent for complex tool use.")
                     FeatureRow(icon: "doc.text.magnifyingglass", title: "Multi-modal Analysis", description: "Deep analysis of PDFs, images, and codebases.")
                     FeatureRow(icon: "shield.check", title: "Local Privacy", description: "Run with local LLMs or secure API bridges.")
-                    
+
                     Spacer()
                         .frame(height: 20)
-                    
+
                     Button {
                         setup.install { success in
                             if success {
-                                // Transition to config or main app
+                                // isInstalled becomes true, parent will auto-transition
+                                // to ConfigWizardView since isConfigured is still false
                             }
                         }
                     } label: {
@@ -77,7 +79,7 @@ struct OnboardingView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
-                    
+
                     Text("This will download ~100MB of backend components.")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
@@ -94,7 +96,7 @@ struct FeatureRow: View {
     let icon: String
     let title: String
     let description: String
-    
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
