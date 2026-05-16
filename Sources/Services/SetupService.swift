@@ -182,9 +182,11 @@ class SetupService: ObservableObject {
         return nil
     }
 
-    /// Run pip with multiple mirror fallbacks for Chinese network environments.
-    /// Tries: Tsinghua → Aliyun → USTC → default PyPI.
+    /// Run pip with proxy bypass + mirror fallbacks for restricted networks.
     private func pipWithMirrors(_ args: String) -> Bool {
+        // Prepend proxy bypass (unset HTTP_PROXY/HTTPS_PROXY for this command)
+        let noProxy = "unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy 2>/dev/null; "
+
         let mirrors = [
             ("Tsinghua", "https://pypi.tuna.tsinghua.edu.cn/simple"),
             ("Aliyun",  "https://mirrors.aliyun.com/pypi/simple"),
@@ -193,23 +195,28 @@ class SetupService: ObservableObject {
         ]
         for (name, url) in mirrors {
             let mirrorArg = url.isEmpty ? "" : "-i \(url) --trusted-host \(URL(string: url)?.host ?? url)"
-            let cmd = "cd '\(hermesAgentDir)' && ./venv/bin/pip \(mirrorArg) \(args) 2>&1"
+            let cmd = "\(noProxy) cd '\(hermesAgentDir)' && ./venv/bin/pip \(mirrorArg) --timeout 30 \(args) 2>&1"
             let (out, code) = runShell(cmd)
             if code == 0 { return true }
-            // Only retry if it looks like a network error
             let lower = out.lowercased()
             if lower.contains("tunnel connection failed")
                 || lower.contains("service unavailable")
                 || lower.contains("connection refused")
                 || lower.contains("network is unreachable")
                 || lower.contains("name or service not known")
-                || lower.contains("timed out") {
+                || lower.contains("timed out")
+                || lower.contains("could not find a version") {
                 updateProgress("Mirror \(name) unreachable, trying next...")
                 continue
             }
-            return false // Non-network error, don't retry
+            return false
         }
-        return false
+
+        // Last resort: try with --no-build-isolation (use venv's pip/setuptools directly)
+        updateProgress("All mirrors failed. Trying --no-build-isolation...")
+        let fallback = "\(noProxy) cd '\(hermesAgentDir)' && ./venv/bin/pip install --no-build-isolation --timeout 30 \(args) 2>&1"
+        let (_, code) = runShell(fallback)
+        return code == 0
     }
 
     private func isPy311(_ path: String) -> Bool {
