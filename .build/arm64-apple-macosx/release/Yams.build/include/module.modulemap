@@ -1,3 +1,0 @@
-module Yams {
-    header "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/Yams.build/include/Yams-Swift.h"
-}
