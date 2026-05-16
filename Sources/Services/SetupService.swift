@@ -114,7 +114,7 @@ class SetupService: ObservableObject {
         _ = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install --upgrade pip setuptools wheel 2>&1")
 
         updateProgress("Installing hermes-agent...")
-        let (pipOut, pipCode) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install -e . 2>&1")
+        let (_, pipCode) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install -e . 2>&1")
         if pipCode != 0 {
             updateProgress("Editable install failed. Trying regular install...")
             let (pipOut2, pipCode2) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install . 2>&1")
