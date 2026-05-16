@@ -87,7 +87,7 @@ class SetupService: ObservableObject {
         if !pipWithMirrors("install -e .") {
             updateProgress("Editable install failed. Trying regular install...")
             if !pipWithMirrors("install .") {
-                setError("pip install failed — all mirrors exhausted. Check network/proxy.")
+                setError("Network blocked.\n\nYour VPN/proxy is preventing pip from downloading build dependencies.\n\nTemporarily disable your proxy/VPN, then click Retry.")
                 return false
             }
         }
