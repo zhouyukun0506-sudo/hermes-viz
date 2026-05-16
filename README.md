@@ -51,6 +51,7 @@ cd .. && rm -rf hermes-viz
 - **Onboarding**: Auto-detects if the backend is installed and provides one-click setup.
 - **Rich Visualization**: Thinking panels, tool execution cards, and real-time token tracking.
 - **Interruptible**: Stop long-running tasks or generation at any time.
+- **Built-in Settings**: Install, configure, and uninstall Hermes Agent directly from the Settings tab — no terminal needed. Uses official `hermes` CLI commands (`hermes setup`, `hermes config set`, `hermes doctor`, `hermes uninstall`).
 
 ## Project Structure
 
@@ -61,5 +62,6 @@ hermes-viz/
 ├── run.sh            # Build & launch in one command
 ├── build-app.sh      # Package into .app bundle
 ├── uninstall.sh      # One-click cleanup
+├── Sources/Views/SettingsView.swift  # In-app Hermes CLI settings
 └── requirements.txt  # Python bridge dependencies
 ```
