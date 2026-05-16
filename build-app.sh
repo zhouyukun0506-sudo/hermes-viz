@@ -28,9 +28,12 @@ else
     exit 1
 fi
 
-# Copy resources (Bridge Script)
+# Copy resources (Bridge Script & Icon)
 find .build -name "hermes_chat_bridge.py" -exec cp {} "$APP_BUNDLE/Contents/Resources/" \;
-echo "✅ Copied bridge script resources"
+if [ -f "AppIcon.icns" ]; then
+    cp "AppIcon.icns" "$APP_BUNDLE/Contents/Resources/"
+fi
+echo "✅ Copied resources and icon"
 
 # Create Info.plist
 cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
@@ -44,6 +47,8 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
     <string>com.hermes.viz</string>
     <key>CFBundleName</key>
     <string>$APP_NAME</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
