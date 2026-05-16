@@ -4,20 +4,23 @@ A native macOS chat interface for the Hermes Agent, built with Swift.
 
 ## Quick Deploy
 
-```bash
-# 1. Clone
-git clone https://github.com/zhouyukun0506-sudo/hermes-viz.git
-cd hermes-viz
+### Option A: DMG Installer (recommended)
 
-# 2. Build & Launch
-./run.sh
+```bash
+# Build everything + create DMG
+./make-dmg.sh
+# → HermesViz.dmg
 ```
 
-Or package into a standalone `.app` bundle:
+Open `HermesViz.dmg`, drag `HermesViz.app` to `/Applications`.  
+**Re-running the DMG overwrites the old version — no manual delete needed.**
+
+### Option B: Run from source
 
 ```bash
-./build-app.sh
-# → HermesViz.app ready to use or share
+git clone https://github.com/zhouyukun0506-sudo/hermes-viz.git
+cd hermes-viz
+./run.sh
 ```
 
 ## Uninstall
@@ -64,6 +67,7 @@ cd .. && rm -rf hermes-viz
 hermes-viz/
 ├── Sources/          # Swift source code
 ├── Package.swift     # Swift Package Manager manifest
+├── make-dmg.sh       # Build .app + create DMG installer
 ├── run.sh            # Build & launch in one command
 ├── build-app.sh      # Package into .app bundle
 ├── uninstall.sh      # One-click cleanup

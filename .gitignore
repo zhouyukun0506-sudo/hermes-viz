@@ -21,8 +21,9 @@ Packages/
 Package.resolved
 *.swp
 
-# App bundle
+# App bundle + DMG
 HermesViz.app/
+*.dmg
 
 # Icon working files
 AppIcon.iconset/
