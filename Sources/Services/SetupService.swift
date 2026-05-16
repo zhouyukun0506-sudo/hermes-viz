@@ -74,19 +74,23 @@ class SetupService: ObservableObject {
         let fm = FileManager.default
         let hermesBase = home + "/.hermes"
 
-        // Resolve a Python >= 3.11 (hermes-agent requires it)
-        updateProgress("Checking Python version...")
-        let pythonPath = resolvePython()
+        // Resolve a Python >= 3.11, auto-install if missing
+        let pythonPath = autoResolvePython()
         if pythonPath == nil {
-            setError("Python 3.11+ required but not found.\n\nInstall it via:\n  brew install python@3.12\n\nThen retry.")
+            setError("Python 3.11+ could not be installed automatically.\n\nInstall it manually:\n  brew install python@3.12\n\nThen retry.")
             return false
         }
-        updateProgress("Using Python at \(pythonPath!)")
 
         do {
             try fm.createDirectory(atPath: hermesBase, withIntermediateDirectories: true)
         } catch {
             setError("Cannot create ~/.hermes: \(error.localizedDescription)")
+            return false
+        }
+
+        // Ensure git is available
+        if !ensureGit() {
+            setError("git is required but could not be installed.\n\nInstall manually:\n  brew install git\n  or download from https://git-scm.com")
             return false
         }
 
@@ -181,32 +185,92 @@ class SetupService: ObservableObject {
 
     // MARK: - Python Resolution
 
-    /// Find a Python >= 3.11. Tries python3.12, python3.11, then python3 with version check.
+    /// Find a Python >= 3.11. If not found, try to install via Homebrew automatically.
     /// Returns the path to a suitable Python, or nil.
-    private func resolvePython() -> String? {
+    private func autoResolvePython() -> String? {
+        // 1. Try existing installations
+        if let existing = scanForPython() {
+            updateProgress("Python \(extractPythonVersion(existing)) found at \(existing)")
+            return existing
+        }
+
+        // 2. Ensure Homebrew is available
+        updateProgress("Python 3.11+ not found. Checking Homebrew...")
+        if !ensureHomebrew() {
+            return nil
+        }
+
+        // 3. Auto-install Python via Homebrew
+        updateProgress("Installing Python 3.12 via Homebrew (this may take several minutes)...")
+        let (brewOut, brewCode) = runShell("brew install python@3.12 2>&1")
+        if brewCode == 0 {
+            updateProgress("Python 3.12 installed.")
+            // Rescan
+            if let installed = scanForPython() {
+                updateProgress("Using newly installed Python at \(installed)")
+                return installed
+            }
+        }
+        // Non-fatal warning — user may need to add brew to PATH
+        updateProgress("Homebrew install may have succeeded but Python not on PATH. Rescanning...")
+        if let installed = scanForPython() {
+            return installed
+        }
+
+        return nil
+    }
+
+    /// Scan for any Python >= 3.11 on the system.
+    private func scanForPython() -> String? {
         let candidates = [
             "/opt/homebrew/bin/python3.12",
             "/usr/local/bin/python3.12",
             "/opt/homebrew/bin/python3.11",
             "/usr/local/bin/python3.11",
+            "/opt/homebrew/bin/python3",
+            "/usr/local/bin/python3",
             "/usr/bin/python3",
         ]
-
-        // 1. Try named binaries first
         for path in candidates {
-            if FileManager.default.fileExists(atPath: path) {
-                if checkPythonVersion(path) { return path }
+            if FileManager.default.fileExists(atPath: path), checkPythonVersion(path) {
+                return path
             }
         }
-
-        // 2. Try `which python3` from PATH
+        // Try PATH
         let (whichOut, _) = runShell("which python3 2>/dev/null")
         let whichPath = whichOut.trimmingCharacters(in: .whitespacesAndNewlines)
         if !whichPath.isEmpty, FileManager.default.fileExists(atPath: whichPath), checkPythonVersion(whichPath) {
             return whichPath
         }
-
         return nil
+    }
+
+    /// Ensure Homebrew is installed. If not, try to install it.
+    private func ensureHomebrew() -> Bool {
+        let brewPaths = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
+        for p in brewPaths {
+            if FileManager.default.fileExists(atPath: p) { return true }
+        }
+        // Try PATH
+        let (whichOut, _) = runShell("which brew 2>/dev/null")
+        let whichBrew = whichOut.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !whichBrew.isEmpty, FileManager.default.fileExists(atPath: whichBrew) { return true }
+
+        // Auto-install Homebrew
+        updateProgress("Homebrew not found. Installing...")
+        let (_, brewCode) = runShell(
+            "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\" 2>&1"
+        )
+        if brewCode != 0 {
+            updateProgress("Homebrew auto-install failed. Please install manually: https://brew.sh")
+            return false
+        }
+        updateProgress("Homebrew installed.")
+        // Check again
+        for p in brewPaths {
+            if FileManager.default.fileExists(atPath: p) { return true }
+        }
+        return false
     }
 
     /// Check if the Python at `path` is >= 3.11.
@@ -218,6 +282,29 @@ class SetupService: ObservableObject {
               let major = Int(parts[0]),
               let minor = Int(parts[1]) else { return false }
         return major > 3 || (major == 3 && minor >= 11)
+    }
+
+    private func extractPythonVersion(_ path: String) -> String {
+        let (v, _) = runShell("'\(path)' --version 2>&1")
+        return v.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    // MARK: - Git Resolution
+
+    /// Ensure git is installed. Tries to auto-install via brew if missing.
+    private func ensureGit() -> Bool {
+        let (_, code) = runShell("which git 2>/dev/null")
+        if code == 0 { return true }
+
+        updateProgress("git not found. Attempting to install...")
+        if ensureHomebrew() {
+            let (_, gitCode) = runShell("brew install git 2>&1")
+            if gitCode == 0 {
+                updateProgress("git installed via Homebrew.")
+                return true
+            }
+        }
+        return false
     }
 
     // MARK: - Helpers
