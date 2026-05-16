@@ -1,9 +1,6 @@
 import Foundation
 import Combine
 
-/// Handles Hermes Agent installation via official installer script.
-/// Uses: curl -fsSL https://hermes-agent.com/install.sh | bash
-/// Falls back to manual git clone + venv + pip if the installer is unreachable.
 class SetupService: ObservableObject {
     @Published var isInstalled: Bool = false
     @Published var isInstalling: Bool = false
@@ -24,12 +21,9 @@ class SetupService: ObservableObject {
         checkInstallation()
     }
 
-    /// Verify hermes CLI binary exists.
     func checkInstallation() {
         isInstalled = FileManager.default.fileExists(atPath: hermesCLI)
     }
-
-    // MARK: - Install
 
     func install(completion: @escaping (Bool) -> Void) {
         isInstalling = true
@@ -43,7 +37,7 @@ class SetupService: ObservableObject {
                 self.isInstalling = false
                 self.checkInstallation()
                 if !success && self.installError == nil {
-                    self.installError = "Installation failed. Check the console output for details."
+                    self.installError = "Installation failed."
                 }
                 completion(self.isInstalled)
             }
@@ -51,7 +45,6 @@ class SetupService: ObservableObject {
     }
 
     private func performInstall() -> Bool {
-        // Strategy 1: Try official installer
         updateProgress("Trying official installer...")
         let (curlOut, curlCode) = runShell("curl -fsSL --connect-timeout 10 '\(installScriptURL)' 2>&1")
         if curlCode == 0 && !curlOut.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -61,12 +54,7 @@ class SetupService: ObservableObject {
                 updateProgress("Official installer completed.")
                 return true
             }
-            updateProgress("Official installer did not produce hermes CLI. Falling back to manual setup...")
-        } else {
-            updateProgress("Official installer not reachable. Using manual setup...")
         }
-
-        // Strategy 2: Manual install
         return performManualInstall()
     }
 
@@ -74,13 +62,12 @@ class SetupService: ObservableObject {
         let fm = FileManager.default
         let hermesBase = home + "/.hermes"
 
-        // Resolve a Python >= 3.11, auto-install if missing
         let pythonPath = autoResolvePython()
         if pythonPath == nil {
             if findHomebrew() != nil {
-                setError("Python 3.11+ installation failed.\n\nThe brew install command did not complete successfully.\n\nPlease run in Terminal:\n  brew install python@3.12\n\nThen click Retry.")
+                setError("Python 3.11+ installation failed.\n\nPlease run in Terminal:\n  brew install python@3.12\n\nThen click Retry.")
             } else {
-                setError("Python 3.11+ and Homebrew not found.\n\nInstall Homebrew first:\n  /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nThen click Retry to auto-install Python.")
+                setError("Python 3.11+ and Homebrew not found.\n\nInstall Homebrew:\n  /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n\nThen click Retry.")
             }
             return false
         }
@@ -92,81 +79,62 @@ class SetupService: ObservableObject {
             return false
         }
 
-        // Ensure git is available
         if !ensureGit() {
-            setError("git is required but could not be installed.\n\nInstall manually:\n  brew install git\n  or download from https://git-scm.com")
+            setError("git is required but could not be installed.")
             return false
         }
 
-        // Clone
         if !fm.fileExists(atPath: hermesAgentDir + "/.git") {
             updateProgress("Cloning hermes-agent...")
             try? fm.removeItem(atPath: hermesAgentDir)
             let (cloneOut, cloneCode) = runShell("git clone --depth 1 '\(repoURL)' '\(hermesAgentDir)' 2>&1")
             if cloneCode != 0 {
-                let tail = String(cloneOut.suffix(400))
-                setError("Failed to clone:\n\(tail)")
+                setError("Failed to clone:\n\(String(cloneOut.suffix(400)))")
                 return false
             }
-            updateProgress("Cloned.")
         } else {
-            updateProgress("Repository exists, updating...")
+            updateProgress("Updating existing repo...")
             _ = runShell("cd '\(hermesAgentDir)' && git pull --ff-only 2>&1")
         }
 
-        // Venv — always recreate if pip is missing
         let pipPath = hermesAgentDir + "/venv/bin/pip"
         if !fm.fileExists(atPath: pipPath) {
             if fm.fileExists(atPath: hermesAgentDir + "/venv") {
-                updateProgress("Removing incomplete venv...")
                 try? fm.removeItem(atPath: hermesAgentDir + "/venv")
             }
-            updateProgress("Creating venv...")
+            updateProgress("Creating venv with \(pythonPath!)...")
             let (venvOut, venvCode) = runShell("cd '\(hermesAgentDir)' && '\(pythonPath!)' -m venv venv 2>&1")
             if venvCode != 0 {
-                let tail = String(venvOut.suffix(300))
-                setError("venv creation failed. Is python3 installed?\n\(tail)")
+                setError("venv creation failed:\n\(String(venvOut.suffix(300)))")
                 return false
             }
         }
 
-        // Upgrade pip first (old pip can't handle pyproject.toml editable installs)
         updateProgress("Upgrading pip...")
-        let (upgradeOut, upgradeCode) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install --upgrade pip setuptools wheel 2>&1")
-        if upgradeCode != 0 {
-            updateProgress("pip upgrade had warnings (non-fatal).")
-        } else {
-            updateProgress("pip upgraded.")
-        }
+        _ = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install --upgrade pip setuptools wheel 2>&1")
 
-        // Pip install — always run to ensure latest
-        updateProgress("Installing hermes-agent (this may take a minute)...")
+        updateProgress("Installing hermes-agent...")
         let (pipOut, pipCode) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install -e . 2>&1")
         if pipCode != 0 {
-            // Fallback: try non-editable install (some build backends don't support -e)
             updateProgress("Editable install failed. Trying regular install...")
             let (pipOut2, pipCode2) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install . 2>&1")
             if pipCode2 != 0 {
-                let tail = String(pipOut2.suffix(500))
-                setError("pip install failed:\n\(tail)")
+                setError("pip install failed:\n\(String(pipOut2.suffix(500)))")
                 return false
             }
-            updateProgress("Package installed (non-editable).")
         }
 
-        // Verify hermes CLI was created
         if !fm.fileExists(atPath: hermesCLI) {
             let (findOut, _) = runShell("find '\(hermesAgentDir)/venv/bin' -name 'hermes' -type f 2>/dev/null")
             let bins = findOut.trimmingCharacters(in: .whitespaces)
             if !bins.isEmpty {
-                updateProgress("Creating symlink...")
                 let binDir = home + "/.local/bin"
                 try? fm.createDirectory(atPath: binDir, withIntermediateDirectories: true)
                 try? fm.removeItem(atPath: hermesCLI)
                 let cliPath = bins.components(separatedBy: "\n").first ?? ""
                 let (_, lnCode) = runShell("ln -s '\(cliPath)' '\(hermesCLI)' 2>&1")
                 if lnCode != 0 {
-                    setError("Symlink failed. Run: ln -s \(cliPath) \(hermesCLI)")
+                    setError("Symlink failed: ln -s \(cliPath) \(hermesCLI)")
                     return false
                 }
             } else {
@@ -175,85 +143,77 @@ class SetupService: ObservableObject {
             }
         }
 
-        // Postinstall
         updateProgress("Running postinstall...")
-        let (postOut, postCode) = runShell("'\(hermesCLI)' postinstall 2>&1")
-        if postCode != 0 {
-            updateProgress("Postinstall warnings (non-fatal).")
-        } else {
-            updateProgress("Postinstall done.")
-        }
-
+        _ = runShell("'\(hermesCLI)' postinstall 2>&1")
         return true
     }
 
     // MARK: - Python Resolution
 
-    /// Find a Python >= 3.11. If not found, auto-install via Homebrew if brew is available.
-    /// Returns the path to a suitable Python, or nil.
     private func autoResolvePython() -> String? {
-        // 1. Try existing installations (including Homebrew's opt paths)
         if let existing = scanForPython() {
-            updateProgress("Python \(extractPythonVersion(existing)) found at \(existing)")
+            updateProgress("Python \(extractPythonVersion(existing))")
             return existing
         }
 
-        // 2. Locate Homebrew (or give clear instructions)
-        updateProgress("Python 3.11+ not found.")
         guard let brewPath = findHomebrew() else {
-            updateProgress("Homebrew not found. To install:")
-            updateProgress("  /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"")
-            updateProgress("Then click Retry.")
+            updateProgress("Homebrew not found.")
             return nil
         }
 
-        // 3. Auto-install Python via Homebrew
         let brewBinDir = (brewPath as NSString).deletingLastPathComponent
         let brewEnv = "export PATH=\"\(brewBinDir):$PATH\""
-        updateProgress("Installing Python 3.12 via Homebrew (this may take a few minutes)...")
-        let (brewOut, brewCode) = runShell("\(brewEnv) && brew install python@3.12 2>&1")
-        if brewCode == 0 {
-            updateProgress("Python 3.12 installed. Rescanning...")
-        } else {
-            updateProgress("brew install returned code \(brewCode). Checking if Python is now available...")
-        }
+        updateProgress("Installing Python 3.12 via Homebrew...")
+        _ = runShell("\(brewEnv) && brew install python@3.12 2>&1")
 
-        // 4. Rescan with expanded paths (include brew opt directories)
-        if let installed = scanForPython(includeOptPaths: true) {
-            updateProgress("Using Python at \(installed)")
+        if let installed = scanForPython() {
+            updateProgress("Python \(extractPythonVersion(installed))")
             return installed
         }
 
-        updateProgress("Python still not found after brew install.")
+        updateProgress("Still not found after brew install.")
         return nil
     }
 
-    /// Scan for any Python >= 3.11 on the system.
-    private func scanForPython(includeOptPaths: Bool = false) -> String? {
-        var candidates = [
-            "/opt/homebrew/bin/python3.12",
-            "/usr/local/bin/python3.12",
-            "/opt/homebrew/bin/python3.11",
-            "/usr/local/bin/python3.11",
-            "/opt/homebrew/bin/python3",
-            "/usr/local/bin/python3",
+    private func scanForPython() -> String? {
+        // 1. Ask brew for exact install prefix (most reliable)
+        if let brewPath = findHomebrew() {
+            let brewBinDir = (brewPath as NSString).deletingLastPathComponent
+            let brewEnv = "export PATH=\"\(brewBinDir):$PATH\""
+            for formula in ["python@3.12", "python@3.13", "python@3.11", "python3"] {
+                let (prefixOut, prefixCode) = runShell("\(brewEnv) && brew --prefix \(formula) 2>/dev/null")
+                if prefixCode == 0 {
+                    let prefix = prefixOut.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !prefix.isEmpty {
+                        for bin in ["bin/python3.12", "bin/python3.13", "bin/python3.11", "bin/python3"] {
+                            let binPath = prefix + "/" + bin
+                            if FileManager.default.fileExists(atPath: binPath), checkPythonVersion(binPath) {
+                                return binPath
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Hardcoded fallbacks
+        let candidates = [
+            "/opt/homebrew/bin/python3.12", "/usr/local/bin/python3.12",
+            "/opt/homebrew/bin/python3.11", "/usr/local/bin/python3.11",
+            "/opt/homebrew/opt/python@3.12/bin/python3.12",
+            "/opt/homebrew/opt/python@3.13/bin/python3.13",
+            "/opt/homebrew/opt/python@3.11/bin/python3.11",
+            "/usr/local/opt/python@3.12/bin/python3.12",
+            "/opt/homebrew/bin/python3", "/usr/local/bin/python3",
             "/usr/bin/python3",
         ]
-        if includeOptPaths {
-            candidates.append(contentsOf: [
-                "/opt/homebrew/opt/python@3.12/bin/python3.12",
-                "/opt/homebrew/opt/python@3.13/bin/python3.13",
-                "/opt/homebrew/opt/python@3.11/bin/python3.11",
-                "/usr/local/opt/python@3.12/bin/python3.12",
-                "/usr/local/opt/python@3.11/bin/python3.11",
-            ])
-        }
         for path in candidates {
             if FileManager.default.fileExists(atPath: path), checkPythonVersion(path) {
                 return path
             }
         }
-        // Try PATH
+
+        // 3. PATH search
         for bin in ["python3.12", "python3.11", "python3"] {
             let (whichOut, _) = runShell("which \(bin) 2>/dev/null")
             let whichPath = whichOut.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -261,29 +221,32 @@ class SetupService: ObservableObject {
                 return whichPath
             }
         }
+
+        // 4. Broad find
+        let (findOut, _) = runShell("find /opt/homebrew /usr/local -maxdepth 4 -name 'python3*' -type f 2>/dev/null | head -20")
+        for line in findOut.components(separatedBy: "\n") {
+            let path = line.trimmingCharacters(in: .whitespaces)
+            if !path.isEmpty, checkPythonVersion(path) { return path }
+        }
+
         return nil
     }
 
-    /// Locate the Homebrew binary. Returns the path, or nil.
     private func findHomebrew() -> String? {
-        let brewPaths = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew", "/home/linuxbrew/.linuxbrew/bin/brew"]
-        for p in brewPaths {
+        for p in ["/opt/homebrew/bin/brew", "/usr/local/bin/brew", "/home/linuxbrew/.linuxbrew/bin/brew"] {
             if FileManager.default.fileExists(atPath: p) { return p }
         }
         let (whichOut, _) = runShell("which brew 2>/dev/null")
-        let whichBrew = whichOut.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !whichBrew.isEmpty, FileManager.default.fileExists(atPath: whichBrew) { return whichBrew }
+        let path = whichOut.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !path.isEmpty, FileManager.default.fileExists(atPath: path) { return path }
         return nil
     }
 
-    /// Check if the Python at `path` is >= 3.11.
     private func checkPythonVersion(_ path: String) -> Bool {
         let (versionOut, code) = runShell("'\(path)' -c 'import sys; print(sys.version_info.major, sys.version_info.minor)' 2>&1")
         guard code == 0 else { return false }
         let parts = versionOut.split(separator: " ")
-        guard parts.count >= 2,
-              let major = Int(parts[0]),
-              let minor = Int(parts[1]) else { return false }
+        guard parts.count >= 2, let major = Int(parts[0]), let minor = Int(parts[1]) else { return false }
         return major > 3 || (major == 3 && minor >= 11)
     }
 
@@ -292,27 +255,17 @@ class SetupService: ObservableObject {
         return v.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    // MARK: - Git Resolution
-
-    /// Ensure git is installed. Tries to auto-install via brew if missing.
     private func ensureGit() -> Bool {
         let (_, code) = runShell("which git 2>/dev/null")
         if code == 0 { return true }
-
-        updateProgress("git not found. Attempting to install...")
         if let brewPath = findHomebrew() {
             let brewBinDir = (brewPath as NSString).deletingLastPathComponent
-            let brewEnv = "export PATH=\"\(brewBinDir):$PATH\""
-            let (_, gitCode) = runShell("\(brewEnv) && brew install git 2>&1")
-            if gitCode == 0 {
-                updateProgress("git installed via Homebrew.")
-                return true
-            }
+            _ = runShell("export PATH=\"\(brewBinDir):$PATH\" && brew install git 2>&1")
+            let (_, check) = runShell("which git 2>/dev/null")
+            return check == 0
         }
         return false
     }
-
-    // MARK: - Helpers
 
     private func updateProgress(_ text: String) {
         DispatchQueue.main.async { self.installProgress = text }
