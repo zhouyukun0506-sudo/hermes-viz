@@ -180,7 +180,8 @@ class SetupService: ObservableObject {
     private func isPy311(_ path: String) -> Bool {
         let (out, code) = runShell("'\(path)' -c 'import sys; print(sys.version_info.major,sys.version_info.minor)' 2>&1")
         guard code == 0 else { return false }
-        let parts = out.split(separator: " ").compactMap { Int($0) }
+        let parts = out.trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(separator: " ").compactMap { Int($0) }
         return parts.count >= 2 && (parts[0] > 3 || (parts[0] == 3 && parts[1] >= 11))
     }
 
