@@ -74,23 +74,27 @@ class SetupService: ObservableObject {
         let pipBin = hermesAgentDir + "/venv/bin/pip"
         if !fm.fileExists(atPath: pipBin) {
             try? fm.removeItem(atPath: hermesAgentDir + "/venv")
-            updateProgress("Creating venv with \(py)...")
-            let (out, code) = runShell("cd '\(hermesAgentDir)' && '\(py)' -m venv venv 2>&1")
+            updateProgress("Creating venv with system packages...")
+            let (out, code) = runShell("cd '\(hermesAgentDir)' && '\(py)' -m venv venv --system-site-packages 2>&1")
             if code != 0 { setError("venv failed:\n\(String(out.suffix(300)))"); return false }
         }
 
-        updateProgress("Upgrading pip with mirror...")
-        if !pipWithMirrors("install --upgrade pip setuptools wheel") {
-            updateProgress("pip upgrade had warnings (non-fatal).")
-        }
-        updateProgress("Installing hermes-agent...")
-        if !pipWithMirrors("install -e .") {
-            updateProgress("Editable install failed. Trying regular install...")
-            if !pipWithMirrors("install .") {
-                setError("Network blocked.\n\nYour VPN/proxy is preventing pip from downloading build dependencies.\n\nTemporarily disable your proxy/VPN, then click Retry.")
-                return false
-            }
-        }
+        // Try offline install first (system site-packages provides setuptools)
+        updateProgress("Installing hermes-agent (offline)...")
+        let (_, offlineCode) = runShell("cd '\(hermesAgentDir)' && ./venv/bin/pip install --no-build-isolation -e . 2>&1")
+        if offlineCode == 0 { return finalizeInstall() }
+
+        // Fallback: with mirrors
+        updateProgress("Offline install failed. Trying with mirrors...")
+        if pipWithMirrors("install -e .") { return finalizeInstall() }
+        if pipWithMirrors("install .") { return finalizeInstall() }
+
+        setError("Cannot install hermes-agent.\n\nAll install methods failed.\nCheck network or try again.")
+        return false
+    }
+
+    private func finalizeInstall() -> Bool {
+        let fm = FileManager.default
 
         if !fm.fileExists(atPath: hermesCLI) {
             let (findOut, _) = runShell("find '\(hermesAgentDir)/venv/bin' -name 'hermes' -type f 2>/dev/null")
