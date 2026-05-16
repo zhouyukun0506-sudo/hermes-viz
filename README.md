@@ -43,12 +43,17 @@ cd .. && rm -rf hermes-viz
 
 - macOS 14.0 (Sonoma) or later
 - Swift 5.9+
-- [Hermes Agent](https://github.com/NousResearch/hermes-agent) installed at `~/.hermes/`
+
+**No other prerequisites** — the in-app installer automatically provisions:
+- Homebrew (if missing)
+- Python 3.12+ (auto-installed via brew)
+- git (auto-installed via brew)
+- hermes-agent (cloned, venv created, dependencies installed)
 
 ## Features
 
 - **Multi-turn Continuity**: Persistent bridge server keeps agent context alive across requests.
-- **Onboarding**: Auto-detects if the backend is installed and provides one-click setup.
+- **Zero-Dependency Setup**: One-click install automatically provisions Python, git, Homebrew, and hermes-agent — no terminal required.
 - **Rich Visualization**: Thinking panels, tool execution cards, and real-time token tracking.
 - **Interruptible**: Stop long-running tasks or generation at any time.
 - **Built-in Settings**: Install, configure, and uninstall Hermes Agent directly from the Settings tab — no terminal needed. Uses official `hermes` CLI commands (`hermes setup`, `hermes config set`, `hermes doctor`, `hermes uninstall`).
