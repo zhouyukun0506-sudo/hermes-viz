@@ -1,46 +1,44 @@
-# HermesViz – macOS Native Agent Dashboard
+# Hermes Modern Chat Interface
 
-SwiftUI native app for visualizing Hermes Agent data.
+A professional, high-fidelity macOS chat interface for the [Hermes Agent](https://github.com/NousResearch/hermes-agent).
 
-## Build
+## Features
+
+- **Multi-turn Continuity**: Persistent bridge server keeps agent context alive across requests.
+- **Portability**: Auto-onboarding guides users through backend installation and configuration.
+- **Rich Visualization**: Thinking panels, tool execution cards, and real-time token tracking.
+- **Interruptible**: Stop long-running tasks or generation at any time with the Stop button.
+
+## Distribution
+
+The project includes a `build-app.sh` script to package the application as a standalone `.app` bundle.
+
+### Prerequisites for Distribution
+
+- macOS 13.0+
+- Swift 5.9+
+- Git
+
+### Build Instructions
 
 ```bash
-cd hermes-viz
-swift run
+./build-app.sh
 ```
 
-Or open in Xcode:
+The resulting `HermesViz.app` can be moved to the `/Applications` folder or shared with others.
+
+## Onboarding Flow
+
+When a user launches the app for the first time:
+1. It detects if the `hermes-agent` backend is installed in `~/.hermes/`.
+2. If missing, it provides a one-click setup to clone and install the backend.
+3. It provides a graphical configuration wizard for API keys and model selection.
+
+## GitHub
+
+This project is ready to be pushed to GitHub:
 
 ```bash
-open Package.swift
+git remote add origin <your-repo-url>
+git push -u origin main
 ```
-
-## Architecture
-
-```
-Sources/
-├── HermesVizApp.swift          @main entry + NavigationSplitView
-├── Models/DataModels.swift     Codable structs
-├── Services/HermesDataService.swift   @Observable singleton data layer
-└── Views/
-    ├── DashboardView.swift     概览: stat cards + daily token bar chart
-    ├── SessionsView.swift      会话: searchable Table + platform filter
-    ├── AnalyticsView.swift     分析: Swift Charts line/area + donut
-    ├── SkillsView.swift        技能: installed agent skills list
-    └── CronView.swift          任务: scheduled cron job monitor
-```
-
-## Data Sources
-
-Reads directly from `~/.hermes/`:
-- `sessions/sessions.json` – session index
-- `sessions/session_*.json` – individual session details (model, messages)
-- `gateway_state.json` – agent running status
-- `skills/*/SKILL.md` – installed agent skills
-- `cron/` + `crontab.json` – scheduled tasks
-
-## Requirements
-
-- macOS 14 (Sonoma) or later
-- Xcode 15+ with Swift 5.9 toolchain
-- No third-party binaries bundled (pure SwiftUI + Yams for YAML)

@@ -53,6 +53,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/Sources/Services/SetupService.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/ethan_chou/hermes-viz/Sources/Views/AnalyticsView.swift"
         },
         {
@@ -61,11 +65,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/Sources/Views/ConfigWizardView.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/ethan_chou/hermes-viz/Sources/Views/CronView.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/ethan_chou/hermes-viz/Sources/Views/DashboardView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/Sources/Views/OnboardingView.swift"
         },
         {
           "kind" : "file",
@@ -108,10 +120,13 @@
         "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/DataModels.swift.o",
         "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/ChatStreamService.swift.o",
         "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/HermesDataService.swift.o",
+        "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/SetupService.swift.o",
         "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/AnalyticsView.swift.o",
         "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/ChatView.swift.o",
+        "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/ConfigWizardView.swift.o",
         "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/CronView.swift.o",
         "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/DashboardView.swift.o",
+        "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/OnboardingView.swift.o",
         "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/SessionsView.swift.o",
         "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/SkillsView.swift.o",
         "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/resource_bundle_accessor.swift.o"
@@ -200,6 +215,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/SetupService.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/AnalyticsView.swift.o"
         },
         {
@@ -208,11 +227,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/ConfigWizardView.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/CronView.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/DashboardView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/OnboardingView.swift.o"
         },
         {
           "kind" : "file",
@@ -237,10 +264,13 @@
         "/Users/ethan_chou/hermes-viz/Sources/Models/DataModels.swift",
         "/Users/ethan_chou/hermes-viz/Sources/Services/ChatStreamService.swift",
         "/Users/ethan_chou/hermes-viz/Sources/Services/HermesDataService.swift",
+        "/Users/ethan_chou/hermes-viz/Sources/Services/SetupService.swift",
         "/Users/ethan_chou/hermes-viz/Sources/Views/AnalyticsView.swift",
         "/Users/ethan_chou/hermes-viz/Sources/Views/ChatView.swift",
+        "/Users/ethan_chou/hermes-viz/Sources/Views/ConfigWizardView.swift",
         "/Users/ethan_chou/hermes-viz/Sources/Views/CronView.swift",
         "/Users/ethan_chou/hermes-viz/Sources/Views/DashboardView.swift",
+        "/Users/ethan_chou/hermes-viz/Sources/Views/OnboardingView.swift",
         "/Users/ethan_chou/hermes-viz/Sources/Views/SessionsView.swift",
         "/Users/ethan_chou/hermes-viz/Sources/Views/SkillsView.swift",
         "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/DerivedSources/resource_bundle_accessor.swift"
@@ -1508,10 +1538,13 @@
       "/Users/ethan_chou/hermes-viz/Sources/Models/DataModels.swift",
       "/Users/ethan_chou/hermes-viz/Sources/Services/ChatStreamService.swift",
       "/Users/ethan_chou/hermes-viz/Sources/Services/HermesDataService.swift",
+      "/Users/ethan_chou/hermes-viz/Sources/Services/SetupService.swift",
       "/Users/ethan_chou/hermes-viz/Sources/Views/AnalyticsView.swift",
       "/Users/ethan_chou/hermes-viz/Sources/Views/ChatView.swift",
+      "/Users/ethan_chou/hermes-viz/Sources/Views/ConfigWizardView.swift",
       "/Users/ethan_chou/hermes-viz/Sources/Views/CronView.swift",
       "/Users/ethan_chou/hermes-viz/Sources/Views/DashboardView.swift",
+      "/Users/ethan_chou/hermes-viz/Sources/Views/OnboardingView.swift",
       "/Users/ethan_chou/hermes-viz/Sources/Views/SessionsView.swift",
       "/Users/ethan_chou/hermes-viz/Sources/Views/SkillsView.swift",
       "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/DerivedSources/resource_bundle_accessor.swift",
@@ -1873,6 +1906,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/Sources/Services/SetupService.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/ethan_chou/hermes-viz/Sources/Views/AnalyticsView.swift"
         },
         {
@@ -1881,11 +1918,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/Sources/Views/ConfigWizardView.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/ethan_chou/hermes-viz/Sources/Views/CronView.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/ethan_chou/hermes-viz/Sources/Views/DashboardView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/Sources/Views/OnboardingView.swift"
         },
         {
           "kind" : "file",
@@ -1951,6 +1996,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/ConfigWizardView.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/CronView.swift.o"
         },
         {
@@ -1971,7 +2020,15 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/OnboardingView.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/SessionsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/SetupService.swift.o"
         },
         {
           "kind" : "file",

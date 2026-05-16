@@ -61,7 +61,7 @@ def _emit(event: dict) -> None:
         pass
 
 
-def _stdin_watcher(on_chat: Optional[callable] = None) -> None:
+def _stdin_watcher(on_chat: Optional[callable] = None, on_abort: Optional[callable] = None) -> None:
     """Background thread: watch stdin for commands."""
     try:
         for line in sys.stdin:
@@ -73,6 +73,8 @@ def _stdin_watcher(on_chat: Optional[callable] = None) -> None:
                 ctype = cmd.get("type")
                 if ctype == "abort":
                     _abort_requested.set()
+                    if on_abort:
+                        on_abort()
                 elif ctype == "chat" and on_chat:
                     prompt = cmd.get("prompt", "")
                     on_chat(prompt)
@@ -119,27 +121,41 @@ def _on_tool_start(tool_call_id: str, function_name: str, function_args: dict) -
     })
 
 
-def _on_tool_complete(tool_call_id: str, function_name: str, result: dict) -> None:
+def _on_tool_complete(tool_call_id: str, function_name: str, function_args: dict, result: Any) -> None:
     """Called when a tool call finishes."""
     success = True
     output = ""
+    
+    # In run_agent.py, result can be a dict or a string or multimodal content
     if isinstance(result, dict):
         success = result.get("success", True)
         output = result.get("output", result.get("diff", ""))
-        if isinstance(output, str):
-            output = output[:500]
+    elif isinstance(result, str):
+        output = result
+    else:
+        output = str(result)
+        
+    if isinstance(output, str):
+        output = output[:500]
+        
     _emit({
         "type": "tool_end",
         "id": tool_call_id,
         "name": function_name,
         "success": success,
-        "output": str(output)[:500],
+        "output": output
     })
 
 
-def _on_tool_progress(tool_name: str, args_preview: str) -> None:
-    """Called with tool execution progress."""
-    _emit({"type": "tool_progress", "name": tool_name, "preview": args_preview[:200]})
+def _on_tool_progress(*args, **kwargs) -> None:
+    """Flexible callback for tool execution progress."""
+    # args often (event_name, tool_name, args_preview, ...)
+    if len(args) >= 3:
+        event_name, tool_name, args_preview = args[0], args[1], args[2]
+        _emit({"type": "tool_progress", "name": tool_name, "preview": str(args_preview)[:200]})
+    elif len(args) >= 2:
+        tool_name, args_preview = args[0], args[1]
+        _emit({"type": "tool_progress", "name": tool_name, "preview": str(args_preview)[:200]})
 
 
 # ── Main ─────────────────────────────────────────────────────────────────
@@ -267,16 +283,24 @@ def run_bridge_server(resume_session_id: Optional[str] = None) -> int:
             sys.stderr = old_stderr
             devnull.close()
 
-    # The watcher will now call on_chat_request
-    _stdin_watcher(on_chat=on_chat_request)
+    def on_abort_request():
+        if agent:
+            agent.interrupt("User requested abort")
+
+    # The watcher will now call on_chat_request and on_abort_request
+    _stdin_watcher(on_chat=on_chat_request, on_abort=on_abort_request)
     return 0
 
 
 def run_bridge(prompt: str, resume_session_id: Optional[str] = None) -> int:
     """Run the agent with streaming callbacks and JSON-lines output."""
 
+    def on_abort_request():
+        if agent:
+            agent.interrupt("User requested abort")
+
     # Start stdin watcher thread
-    watcher = threading.Thread(target=_stdin_watcher, daemon=True)
+    watcher = threading.Thread(target=_stdin_watcher, kwargs={"on_abort": on_abort_request}, daemon=True)
     watcher.start()
 
     # Auto-approve tool calls (non-interactive)

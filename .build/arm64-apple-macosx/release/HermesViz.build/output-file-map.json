@@ -28,6 +28,12 @@
     "swift-dependencies": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/HermesDataService.swiftdeps",
     "diagnostics": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/HermesDataService.dia"
   },
+  "/Users/ethan_chou/hermes-viz/Sources/Services/SetupService.swift": {
+    "object": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/SetupService.swift.o",
+    "swiftmodule": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/SetupService~partial.swiftmodule",
+    "swift-dependencies": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/SetupService.swiftdeps",
+    "diagnostics": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/SetupService.dia"
+  },
   "/Users/ethan_chou/hermes-viz/Sources/Views/AnalyticsView.swift": {
     "object": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/AnalyticsView.swift.o",
     "swiftmodule": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/AnalyticsView~partial.swiftmodule",
@@ -40,6 +46,12 @@
     "swift-dependencies": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/ChatView.swiftdeps",
     "diagnostics": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/ChatView.dia"
   },
+  "/Users/ethan_chou/hermes-viz/Sources/Views/ConfigWizardView.swift": {
+    "object": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/ConfigWizardView.swift.o",
+    "swiftmodule": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/ConfigWizardView~partial.swiftmodule",
+    "swift-dependencies": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/ConfigWizardView.swiftdeps",
+    "diagnostics": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/ConfigWizardView.dia"
+  },
   "/Users/ethan_chou/hermes-viz/Sources/Views/CronView.swift": {
     "object": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/CronView.swift.o",
     "swiftmodule": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/CronView~partial.swiftmodule",
@@ -51,6 +63,12 @@
     "swiftmodule": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/DashboardView~partial.swiftmodule",
     "swift-dependencies": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/DashboardView.swiftdeps",
     "diagnostics": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/DashboardView.dia"
+  },
+  "/Users/ethan_chou/hermes-viz/Sources/Views/OnboardingView.swift": {
+    "object": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/OnboardingView.swift.o",
+    "swiftmodule": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/OnboardingView~partial.swiftmodule",
+    "swift-dependencies": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/OnboardingView.swiftdeps",
+    "diagnostics": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/OnboardingView.dia"
   },
   "/Users/ethan_chou/hermes-viz/Sources/Views/SessionsView.swift": {
     "object": "/Users/ethan_chou/hermes-viz/.build/arm64-apple-macosx/release/HermesViz.build/SessionsView.swift.o",
