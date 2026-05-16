@@ -31,13 +31,17 @@ struct HermesVizApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
+            ZStack {
                 if !setup.isInstalled {
                     OnboardingView(setup: setup)
+                        .transition(.opacity)
                 } else if !isConfigured {
                     ConfigWizardView(onComplete: {
-                        isConfigured = true
+                        withAnimation(.easeInOut(duration: 0.4)) {
+                            isConfigured = true
+                        }
                     })
+                        .transition(.opacity)
                 } else {
                     NavigationSplitView {
                         sidebar
