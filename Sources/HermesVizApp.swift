@@ -14,6 +14,7 @@ struct HermesVizApp: App {
         case analytics = "Analytics"
         case skills = "Skills"
         case cron = "Tasks"
+        case settings = "Settings"
 
         var icon: String {
             switch self {
@@ -23,6 +24,7 @@ struct HermesVizApp: App {
             case .analytics: "chart.bar"
             case .skills: "star"
             case .cron: "calendar"
+            case .settings: "gearshape"
             }
         }
     }
@@ -175,6 +177,7 @@ struct HermesVizApp: App {
         case .analytics: AnalyticsView()
         case .skills: SkillsView()
         case .cron: CronView()
+        case .settings: SettingsView()
         }
     }
 }
