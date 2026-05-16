@@ -9,10 +9,17 @@ STAGING="$(mktemp -d /tmp/hermesviz-pkg.XXXXXX)"
 echo "📦 Building ${APP_NAME} installer..."
 
 # 1. Build .app
-if [ ! -d "${APP_NAME}.app" ]; then
-    echo "  Building .app..."
-    swift build -c release 2>&1 | tail -3
-    ./build-app.sh 2>&1
+echo "  Building .app..."
+swift build -c release 2>&1 | tail -3
+./build-app.sh 2>&1
+
+# 2. Bundle offline resources (hermes-agent + wheels)
+if [ -f bundle-offline.sh ] && [ -d "/Users/ethan_chou/.hermes/hermes-agent" ]; then
+    echo "  Bundling offline resources..."
+    ./bundle-offline.sh 2>&1 | grep "→"
+else
+    echo "  ⚠️  Offline bundle skipped (no hermes-agent source available)."
+    echo "     The installer will download hermes-agent on first run."
 fi
 
 # 2. Create standalone installer package

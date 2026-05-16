@@ -60,6 +60,12 @@ class SetupService: ObservableObject {
         do { try fm.createDirectory(atPath: home + "/.hermes", withIntermediateDirectories: true) }
         catch { setError("Cannot create ~/.hermes"); return false }
 
+        // Try offline bundle first
+        if let offlineDir = findOfflineBundle() {
+            updateProgress("Offline bundle found. Installing from local resources...")
+            return performOfflineInstall(python: py, offlineDir: offlineDir)
+        }
+
         if !ensureGit() { setError("git required"); return false }
 
         if !fm.fileExists(atPath: hermesAgentDir + "/.git") {
@@ -108,6 +114,62 @@ class SetupService: ObservableObject {
         }
         _ = runShell("'\(hermesCLI)' postinstall 2>&1")
         return true
+    }
+
+    // MARK: - Offline Bundle
+
+    /// Look for bundled offline resources inside the .app.
+    private func findOfflineBundle() -> String? {
+        // Bundled resources (SwiftPM)
+        if let bundled = Bundle.module.resourcePath {
+            let path = bundled + "/offline"
+            if FileManager.default.fileExists(atPath: path + "/hermes-agent/pyproject.toml") {
+                return path
+            }
+        }
+        // Development: check alongside the binary
+        let devPath = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("HermesViz.app/Contents/Resources/offline")
+            .path
+        if FileManager.default.fileExists(atPath: devPath + "/hermes-agent/pyproject.toml") {
+            return devPath
+        }
+        return nil
+    }
+
+    private func performOfflineInstall(python: String, offlineDir: String) -> Bool {
+        let fm = FileManager.default
+        let wheelsDir = offlineDir + "/wheels"
+        let srcDir = offlineDir + "/hermes-agent"
+
+        // Copy source to ~/.hermes/
+        updateProgress("Copying hermes-agent from bundle...")
+        try? fm.removeItem(atPath: hermesAgentDir)
+        do {
+            try fm.copyItem(atPath: srcDir, toPath: hermesAgentDir)
+        } catch {
+            setError("Copy failed: \(error.localizedDescription)")
+            return false
+        }
+
+        // Create venv
+        updateProgress("Creating venv...")
+        let (out, code) = runShell("cd '\(hermesAgentDir)' && '\(python)' -m venv venv --system-site-packages 2>&1")
+        if code != 0 { setError("venv failed:\n\(String(out.suffix(300)))"); return false }
+
+        // Install from local wheels (zero network)
+        updateProgress("Installing from local wheels...")
+        let installCmd = "cd '\(hermesAgentDir)' && ./venv/bin/pip install --no-index --find-links '\(wheelsDir)' --no-build-isolation -e . 2>&1"
+        let (pipOut, pipCode) = runShell(installCmd)
+        if pipCode != 0 {
+            setError("Offline install failed:\n\(String(pipOut.suffix(500)))")
+            return false
+        }
+
+        return finalizeInstall()
     }
 
     // MARK: - Python Resolution
