@@ -2,11 +2,9 @@ import SwiftUI
 
 struct OnboardingView: View {
     @ObservedObject var setup: SetupService
-    @State private var showingConfig = false
 
     var body: some View {
         VStack(spacing: 30) {
-            // Logo / Icon
             Circle()
                 .fill(Color.wxAccent)
                 .frame(width: 80, height: 80)
@@ -27,25 +25,30 @@ struct OnboardingView: View {
 
             if setup.isInstalling {
                 VStack(spacing: 16) {
-                    ProgressView()
-                        .controlSize(.large)
-                    Text(setup.installProgress)
-                        .font(.system(size: 13, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                    ProgressView().controlSize(.large)
+                    ScrollView {
+                        Text(setup.installProgress)
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 150)
                 }
-                .transition(.opacity)
             } else if let error = setup.installError {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.red)
-                        .font(.title)
-                    Text("Installation Failed")
-                        .font(.headline)
-                    Text(error)
-                        .font(.caption)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        .foregroundStyle(.red).font(.title)
+                    Text("Installation Failed").font(.headline)
+                    ScrollView {
+                        Text(error)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.red)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                    }
+                    .frame(maxHeight: 160)
 
                     Button("Retry Installation") {
                         setup.install { _ in }
@@ -56,20 +59,17 @@ struct OnboardingView: View {
                 }
             } else {
                 VStack(spacing: 20) {
-                    FeatureRow(icon: "sparkles", title: "Autonomous Agent", description: "Powered by Hermes-Agent for complex tool use.")
-                    FeatureRow(icon: "doc.text.magnifyingglass", title: "Multi-modal Analysis", description: "Deep analysis of PDFs, images, and codebases.")
-                    FeatureRow(icon: "shield.check", title: "Local Privacy", description: "Run with local LLMs or secure API bridges.")
+                    FeatureRow(icon: "sparkles", title: "Autonomous Agent",
+                        description: "Powered by Hermes-Agent for complex tool use.")
+                    FeatureRow(icon: "doc.text.magnifyingglass", title: "Multi-modal Analysis",
+                        description: "Deep analysis of PDFs, images, and codebases.")
+                    FeatureRow(icon: "shield.check", title: "Local Privacy",
+                        description: "Run with local LLMs or secure API bridges.")
 
-                    Spacer()
-                        .frame(height: 20)
+                    Spacer().frame(height: 20)
 
                     Button {
-                        setup.install { success in
-                            if success {
-                                // isInstalled becomes true, parent will auto-transition
-                                // to ConfigWizardView since isConfigured is still false
-                            }
-                        }
+                        setup.install { _ in }
                     } label: {
                         Text("Setup Hermes Agent")
                             .font(.system(size: 15, weight: .semibold))
@@ -80,36 +80,26 @@ struct OnboardingView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Text("This will download ~100MB of backend components.")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    Text("Downloads ~100MB. Requires python3 and git.")
+                        .font(.caption2).foregroundStyle(.tertiary)
                 }
             }
         }
         .padding(40)
-        .frame(maxWidth: 400)
+        .frame(maxWidth: 420)
         .background(Color.wxBase)
     }
 }
 
 struct FeatureRow: View {
-    let icon: String
-    let title: String
-    let description: String
-
+    let icon: String; let title: String; let description: String
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundStyle(Color.wxAccent)
-                .frame(width: 24)
+                .font(.system(size: 16)).foregroundStyle(Color.wxAccent).frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                Text(description)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                Text(title).font(.system(size: 13, weight: .semibold))
+                Text(description).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(2)
             }
         }
     }
